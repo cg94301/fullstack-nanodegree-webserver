@@ -2,6 +2,8 @@
 
 ### 1./2. Launch VM via Udacity Account and SSH into VM
 
+Go to your Udacity account to launch your VM. Follow the link in Udacity project instructions. This will provide you with an IP address for your publicly accessible server at AWS. In my case 52.37.55.67.
+
 ```
 me@local:~$ ssh -i ~/.ssh/udacity_key.rsa root@52.37.55.67
 ```
@@ -130,8 +132,10 @@ Sun Feb 28 22:52:10 UTC 2016
 grader@vm:~$ sudo apt-get install apache2
 ```
 
-This will install and start the Apache2 webserver. By default pages are served from `/var/www/html/index.html`. 
-Open the default page in a browser by going to `http://52.37.55.67/`.
+This will install and start the Apache2 webserver. By default pages are served from `/var/www/html/index.html`.  
+Translate your IP to the AWS URL, as per instructions, like so:
+`http://ec2-52-37-55-67.us-west-2.compute.amazonaws.com/'.
+Open the default Apache page in a browser by going to this URL.
 
 #### Install the application handler
 
@@ -160,7 +164,8 @@ And restart Apache to use the handler:
 ```
 grader@vm:~$ sudo apache2ctl restart
 ```
-Open your browser at `http://52.37.55.67/` and see `Hello World` welcome.
+
+Open your browser at your AWS URL and see `Hello World` welcome.
 
 #### Clone fullstack nanodegree project 3
 
@@ -172,17 +177,13 @@ grader@vm:/var/www$ sudo ln -s fullstack-nanodegree-catalog/vagrant/catalog
 
 #### Install dependencies for project 3
 
+Use the Python package manager PIP to install dependencies.
+
 ```
 grader@vm:~$ sudo apt-get install python-pip
 grader@vm:~$ sudo pip install Flask
 grader@vm:~$ sudo pip install SQLAlchemy
 grader@vm:~$ sudo pip install oauth2client
-```
-
-You need client_secrets.json. Use scp to copy to VM:
-
-```
-me@local:~$ scp -P 2200 -i ~/.ssh/udacity_key.rsa client_secrets.json grader@52.37.55.67:
 ```
 
 You can test completeness of project 3 dependencies:
@@ -199,8 +200,8 @@ import sys
 import logging
 logging.basicConfig(stream=sys.stderr)
 sys.path.insert(0,"/var/www/catalog/")
-from application import app
-app.secret_key = 'catalog_secret_key'
+from application import app as application
+application.secret_key = 'catalog_secret_key'
 ```
 
 **/etc/apache2/sites-available**
@@ -238,17 +239,76 @@ app.secret_key = 'catalog_secret_key'
         <Directory /var/www/catalog/>
             Order allow,deny
             Allow from all
+            Options -Indexes
         </Directory>
         Alias /static /var/www/catalog/static
         <Directory /var/www/catalog/static>
             Order allow,deny
             Allow from all
+            Options -Indexes
         </Directory>
 </VirtualHost>
 ```
+Notice use of `Options -Indexes` to disable directory listings in Apache.
+
+Switch from the default handler to the new catalog handler and reload:
 
 ```
 grader@vm:~$ sudo a2dissite 000-default
 grader@vm:~$ sudo a2ensite catalog
 grader@vm:~$ sudo service apache2 reload
 ```
+
+#### Get Catalog to work with SQLite first
+
+As a first step, let's get the original project 3 to work. This project used SQLite. Only then switch to the required PostgreSQL setup.
+
+You need to use absolute paths to your SQLite DB, like so:
+
+`engine = create_engine('sqlite:////var/www/catalog/redwines.db?check_same_thread=False')`
+
+Notice that you need 4 slashes for the absolute path. Also notice that we have disabled the check
+for same thread.
+
+Use absolute path for client secrets too:
+
+`CLIENT_ID = json.loads(open('/var/www/catalog/client_secrets.json','r').read())['web']['client_id']`
+
+Finally you need to set proper UNIX permissions. The Apache user is called `www-data`. This user needs to have
+read and write permissions to the DB and the directory the DB is contained in.
+
+#### Add client_secrets.json
+
+You need client_secrets.json for oauth authorization. Go to Google Developers Console. 
+Select the OAuth project. Select API Manager. Select Credentials. 
+There you will find the web client defined in the OAuth project. Add 
+
+Authorized JavaScript origins:
+
+http://ec2-52-37-55-67.us-west-2.compute.amazonaws.com/
+
+Authorized redirect URLs:
+
+http://ec2-52-37-55-67.us-west-2.compute.amazonaws.com/login
+
+http://ec2-52-37-55-67.us-west-2.compute.amazonaws.com/gconnect
+
+Download the newly defined client secrets JSON file. Rename to client_secrets.json and use scp to copy to VM:
+
+```
+me@local:~$ scp -P 2200 -i ~/.ssh/udacity_key.rsa client_secrets.json grader@52.37.55.67:
+```
+
+#### Debug
+
+Good commands to know for working with Apache2 webserver are:
+
+```
+sudo service apache2 reload
+sudo service apache2 restart
+sudo service apache2 stop
+sudo service apache2 start
+```
+
+If you encounter an error, check the Apache error log at `/var/log/apache2/error.log`.
+
