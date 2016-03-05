@@ -1,5 +1,9 @@
 # fullstack-nanodegree-webserver
 
+You will take a baseline installation of a Linux distribution on a virtual machine and prepare it to host your web applications, to include installing updates, securing it from a number of attack vectors and installing/configuring web and database servers.
+
+The title enumeration reflects the steps outlined in the Udacity project instructions. Some steps between those major steps are necessary and described under titles without numbers.
+
 ### 1./2. Launch VM via Udacity Account and SSH into VM
 
 Go to your Udacity account to launch your VM. Follow the link in Udacity project instructions. This will provide you with an IP address for your publicly accessible server at AWS. In my case 52.37.55.67.
@@ -108,6 +112,16 @@ To                         Action      From
 2200 (v6)                  ALLOW       Anywhere (v6)
 ```
 
+#### Prevent Root Login
+
+Now that ssh for grader is fully configured and the firewall is enabled it's save to disable
+the root access via ssh. In file `/etc/ssh/sshd_config` change setting `PermitRootLogin`
+from `without-password` to `no`.
+
+```
+grader@vm:~$ sudo reload ssh
+```
+
 ### 8. Configure local timezone to UTC
 
 ```
@@ -167,7 +181,15 @@ grader@vm:~$ sudo apache2ctl restart
 
 Open your browser at your AWS URL and see `Hello World` welcome.
 
+#### Tag existing project 3
+
+Before you clone the project and make changes it might make sense to tag it. It's easy to add a full tag in git,
+e.g. `git tag -a v1.0 -m "Project 3 complete SQLite version"`. There's a separate command to push tags,
+`git push --tags`. Issue these commands from your local machine in the existing project 3 workarea.
+
 #### Clone fullstack nanodegree project 3
+
+Then install git on the server and clone the project:
 
 ```
 grader@vm:~$ sudo apt-get install git
@@ -312,3 +334,62 @@ sudo service apache2 start
 
 If you encounter an error, check the Apache error log at `/var/log/apache2/error.log`.
 
+#### Tag Apache2 SQLite version of project 3
+
+At this point project 3 is up and running with SQLite. Tag this project and push it to github. We'll call this v2.0.
+
+#### Installing PostgreSQL
+
+```
+grader@vm:~$ sudo apt-get install postgresql postgresql-contrib
+```
+
+This command will install PostgreSQL 9.3 and also start the DB. You can access the DB with `psql` utility.
+
+```
+grader@vm:~$ sudo -u postgres psql
+postgres=# CREATE USER catalog WITH CREATEDB LOGIN PASSWORD;
+postgres=# \du
+                             List of roles
+ Role name |                   Attributes                   | Member of 
+-----------+------------------------------------------------+-----------
+ catalog   | Create DB                                      | {}
+ postgres  | Superuser, Create role, Create DB, Replication | {}
+
+postgres=# CREATE DATABASE catalog;
+postgres=# \q
+grader@vm:~$ sudo -u postgres createdb -O catalog catalog
+grader@vm:~$ sudo -u postgres psql -U postgres -d catalog -c "REVOKE ALL ON SCHEMA public FROM public;"
+grader@vm:~$ sudo -u postgres psql -U postgres -d catalog -c "GRANT ALL ON SCHEMA public TO catalog;"
+```
+
+Configure the DB. Edit `postgresql.conf`:
+
+```
+grader@vm:~$ sudo -u postgres vi /etc/postgresql/9.3/main/postgresql.conf
+```
+
+Set `listen_addresses = 'localhost'`.
+
+```
+grader@vm:~$ sudo apt-get install python-psycopg2
+```
+
+#### Update SQLAlchemy to connect to PostgreSQL
+
+Change create engine dialect in SQLAlchemy to connect to PostgreSQL in files
+`application.py`, `dbinit.py` and `dbpopulate.py`:
+
+`engine = create_engine('postgresql://catalog:caTal0g@localhost:5432/catalog')`
+
+Initialize the DB:
+
+```
+grader@vm:~$ python application.py
+grader@vm:~$ python dbpopulate.py
+```
+
+Verify that everything is fine by going to http://ec2-52-37-55-67.us-west-2.compute.amazonaws.com/. 
+Login, add wine, edit wine and delete wine. Everything should be working fine.
+
+*Done!*
