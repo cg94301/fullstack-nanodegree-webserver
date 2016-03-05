@@ -2,6 +2,14 @@
 
 You will take a baseline installation of a Linux distribution on a virtual machine and prepare it to host your web applications, to include installing updates, securing it from a number of attack vectors and installing/configuring web and database servers.
 
+## For reviewer
+
+ssh -p 2200 -i ~/.ssh/udacity_key.rsa grader@52.37.55.67
+
+http://ec2-52-37-55-67.us-west-2.compute.amazonaws.com/
+
+## Get started
+
 The title enumeration reflects the steps outlined in the Udacity project instructions. Some steps between those major steps are necessary and described under titles without numbers.
 
 ### 1./2. Launch VM via Udacity Account and SSH into VM
