@@ -363,24 +363,44 @@ grader@vm:~$ sudo -u postgres psql -U postgres -d catalog -c "REVOKE ALL ON SCHE
 grader@vm:~$ sudo -u postgres psql -U postgres -d catalog -c "GRANT ALL ON SCHEMA public TO catalog;"
 ```
 
-Configure the DB. Edit `postgresql.conf`:
+#### Do not allow remote connections
+
+This is actually already the default when installing PostgreSQL. Look into the host based
+authentication file to double check settings:
+
+`/etc/postgresql/9.3/main/pg_hba.conf:`
+```
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+local   all             postgres                                peer
+local   all             all                                     peer
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            md5
+# IPv6 local connections:
+host    all             all             ::1/128                 md5
+```
+
+Configure the DB to listen to local addresses only.
+
+`/etc/postgresql/9.3/main/postgresql.conf:`
 
 ```
-grader@vm:~$ sudo -u postgres vi /etc/postgresql/9.3/main/postgresql.conf
+listen_addresses = 'localhost'
 ```
 
-Set `listen_addresses = 'localhost'`.
+#### Update SQLAlchemy to connect to PostgreSQL
+
+You need psycopg2 library for Python:
 
 ```
 grader@vm:~$ sudo apt-get install python-psycopg2
 ```
 
-#### Update SQLAlchemy to connect to PostgreSQL
-
 Change create engine dialect in SQLAlchemy to connect to PostgreSQL in files
 `application.py`, `dbinit.py` and `dbpopulate.py`:
 
-`engine = create_engine('postgresql://catalog:caTal0g@localhost:5432/catalog')`
+```
+engine = create_engine('postgresql://catalog:caTal0g@localhost:5432/catalog')
+```
 
 Initialize the DB:
 
@@ -392,4 +412,8 @@ grader@vm:~$ python dbpopulate.py
 Verify that everything is fine by going to http://ec2-52-37-55-67.us-west-2.compute.amazonaws.com/. 
 Login, add wine, edit wine and delete wine. Everything should be working fine.
 
-*Done!*
+#### Tag final PostgreSQL version of project 3
+
+At this point project 3 is up and running with PostgreSQL. Tag this project and push it to github. We'll call this v3.0.
+
+*And you're done!*
