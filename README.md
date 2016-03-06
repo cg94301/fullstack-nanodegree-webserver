@@ -32,11 +32,11 @@ root@vm:~$ adduser grader
 root@vm:~$ vi /etc/sudoers.d/grader
 ```
 
-Add these lines to file grader:
+Require grader to use its own password to sudo. Add these lines to file grader:
 
-**/etc/sudoers.d/grader**
+`/etc/sudoers.d/grader:`
 ```
-grader ALL=(ALL) NOPASSWD:ALL`
+grader ALL=(ALL) ALL
 ```
 
 And save the file. Then change permissions to 440:
