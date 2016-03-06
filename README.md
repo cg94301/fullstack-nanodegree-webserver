@@ -26,6 +26,8 @@ me@local:~$ ssh -i ~/.ssh/udacity_key.rsa root@52.37.55.67
 root@vm:~$ adduser grader 
 ``` 
 
+Generate strong password automatically at http://passwordsgenerator.net/. Use default settings.
+
 ### 4. Give grader permission to sudo
 
 ```
@@ -431,7 +433,9 @@ At this point project 3 is up and running with PostgreSQL. Tag this project and 
 
 ## Optional Setup
 
-#### System Monitoring
+### System Monitoring
+
+(Source: https://pypi.python.org/pypi/Glances)
 
 Glances is a cross-platform curses-based system monitoring tool written in Python.
 
@@ -445,7 +449,9 @@ grader@vm:~$ glances
 ![glances system monitor](images/glances.png)
 
 
-#### Automatic Updates
+### Automatic Updates
+
+(Source: https://wiki.debian.org/UnattendedUpgrades)
 
 Run Unattended Upgrades to keep the computer current with the latest security (and other) updates automatically. Monitor log files in /var/log/dpkg.log, or the files in /var/log/unattended-upgrades/.
 
@@ -454,7 +460,7 @@ Run Unattended Upgrades to keep the computer current with the latest security (a
 grader@vm:~$ sudo apt-get install unattended-upgrades
 ```
 
-The default configuration file is at /etc/apt/apt.conf.d/50unattended-upgrades. Defaults are fine for now.
+The default configuration file is at `/etc/apt/apt.conf.d/50unattended-upgrades`. Defaults are fine for now.
 
 Active updates via apt configuration file `/etc/apt/apt.conf.d/20auto-upgrades`.
 
@@ -464,3 +470,87 @@ APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
 ```
 
+### Protecting SSH with Fail2Ban
+
+(Source: https://www.digitalocean.com/community/tutorials/how-to-protect-ssh-with-fail2ban-on-ubuntu-14-04)
+
+Install fail2ban and secure the configuration file from package upgrade
+modifications by creating a local copy that fail2ban can find.
+
+```
+grader@vm:~$ sudo apt-get install fail2ban
+grader@vm:~$ sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+```
+
+In this file, there are a few settings you may wish to adjust. The settings located under the [DEFAULT] section will be applied to all services enabled for fail2ban that are not overridden in the service's own section.
+
+`ignoreip = 127.0.0.1/8`
+You can adjust the source addresses that fail2ban ignores by adding a value to the ignoreip parameter. Currently, it is configured not ban any traffic coming from the local machine. You can add additional addresses to ignore by appending them to the end of the parameter, separated by a space.
+
+`bantime = 600`
+The bantime parameter sets length of time that a client will be banned when they have failed to authenticate correctly. This is measured in seconds. By default, this is set to 600 seconds, or 10 minutes.
+
+`findtime = 600`
+`maxretry = 3`
+The next two parameters that you want to pay attention to are findtime and maxretry. These work together to establish the conditions under which a client is found to be an illegitimate user that should be banned.
+
+The maxretry variable sets the number of tries a client has to authenticate within a window of time defined by findtime, before being banned. With the default settings, the fail2ban service will ban a client that unsuccessfully attempts to log in 3 times within a 10 minute window.
+
+
+Finally, we get to the portion of the configuration file that deals with individual services. These are specified by the section headers, like [SSH].
+
+Each of these sections can be enabled by modifying or adding the enabled line to be "true":
+
+`enabled = true`
+By default, the SSH service is enabled and all others are disabled.
+
+These sections work by using the default values we defined above. If you want to override any values, you can do so under the service's section. If you want to use the defaults, you aren't required to add anything.
+
+To implement your configuration changes, you'll need to restart the fail2ban service. You can do that by typing:
+
+```
+grader@vm:~$ sudo service fail2ban restart
+```
+
+You can see all of your enabled jails by using the fail2ban-client command:
+
+```
+grader@vm:~$ sudo fail2ban-client status
+```
+
+You should see a list of all of the jails you enabled:
+```
+Status
+|- Number of jail:	1
+`- Jail list:		ssh
+```
+
+You can see that fail2ban has modified your firewall rules to create a framework for banning clients. 
+Even with no previous firewall rules, you would now have a framework enabled that allows fail2ban to 
+selectively ban clients by adding them to purpose-built chains:
+
+```
+grader@vm:~$ sudo iptables -S
+-P INPUT DROP
+-P FORWARD DROP
+-P OUTPUT ACCEPT
+-N fail2ban-ssh
+-N ufw-after-forward
+-N ufw-after-input
+...
+```
+
+You can test the policies. Keep a shell open on the VM in case you need to unban your IP. 
+Attempt some bogus ssh logins.
+
+If you look at the status with the fail2ban-client command, you will see your IP address being banned from the site:
+
+```
+grader@vm:~$ sudo fail2ban-client status ssh
+```
+
+When you are satisfied that your rules are working, you can manually un-ban your IP address with the fail2ban-client by typing:
+
+```
+grader@vm:~$ sudo fail2ban-client set apache unbanip 111.111.111.111
+```
