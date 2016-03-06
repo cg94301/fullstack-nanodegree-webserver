@@ -429,9 +429,9 @@ At this point project 3 is up and running with PostgreSQL. Tag this project and 
 *And you're done!*
 
 
-## Optional Tools
+## Optional Setup
 
-#### Glances
+#### System Monitoring
 
 Glances is a cross-platform curses-based system monitoring tool written in Python.
 
@@ -443,3 +443,24 @@ grader@vm:~$ glances
 ```
 
 ![glances system monitor](images/glances.png)
+
+
+#### Automatic Updates
+
+Run Unattended Upgrades to keep the computer current with the latest security (and other) updates automatically. Monitor log files in /var/log/dpkg.log, or the files in /var/log/unattended-upgrades/.
+
+
+```
+grader@vm:~$ sudo apt-get install unattended-upgrades
+```
+
+The default configuration file is at /etc/apt/apt.conf.d/50unattended-upgrades. Defaults are fine for now.
+
+Active updates via apt configuration file `/etc/apt/apt.conf.d/20auto-upgrades`.
+
+`20auto-upgrades:`
+```
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+```
+
