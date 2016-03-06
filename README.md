@@ -485,13 +485,17 @@ grader@vm:~$ sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
 In this file, there are a few settings you may wish to adjust. The settings located under the [DEFAULT] section will be applied to all services enabled for fail2ban that are not overridden in the service's own section.
 
 `ignoreip = 127.0.0.1/8`
+
 You can adjust the source addresses that fail2ban ignores by adding a value to the ignoreip parameter. Currently, it is configured not ban any traffic coming from the local machine. You can add additional addresses to ignore by appending them to the end of the parameter, separated by a space.
 
 `bantime = 600`
+
 The bantime parameter sets length of time that a client will be banned when they have failed to authenticate correctly. This is measured in seconds. By default, this is set to 600 seconds, or 10 minutes.
 
 `findtime = 600`
+
 `maxretry = 3`
+
 The next two parameters that you want to pay attention to are findtime and maxretry. These work together to establish the conditions under which a client is found to be an illegitimate user that should be banned.
 
 The maxretry variable sets the number of tries a client has to authenticate within a window of time defined by findtime, before being banned. With the default settings, the fail2ban service will ban a client that unsuccessfully attempts to log in 3 times within a 10 minute window.
@@ -502,6 +506,7 @@ Finally, we get to the portion of the configuration file that deals with individ
 Each of these sections can be enabled by modifying or adding the enabled line to be "true":
 
 `enabled = true`
+
 By default, the SSH service is enabled and all others are disabled.
 
 These sections work by using the default values we defined above. If you want to override any values, you can do so under the service's section. If you want to use the defaults, you aren't required to add anything.
