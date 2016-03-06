@@ -420,8 +420,26 @@ grader@vm:~$ python dbpopulate.py
 Verify that everything is fine by going to http://ec2-52-37-55-67.us-west-2.compute.amazonaws.com/. 
 Login, add wine, edit wine and delete wine. Everything should be working fine.
 
+![catalog app top](images/awscatalog.png)
+
 #### Tag final PostgreSQL version of project 3
 
 At this point project 3 is up and running with PostgreSQL. Tag this project and push it to github. We'll call this v3.0.
 
 *And you're done!*
+
+
+## Optional Tools
+
+#### Glances
+
+Glances is a cross-platform curses-based system monitoring tool written in Python.
+
+```
+grader@vm:~$ sudo apt-get install gcc python-dev
+grader@vm:~$ sudo pip install psutil
+grader@vm:~$ sudo pip install glances
+grader@vm:~$ glances
+```
+
+![glances system monitor](images/glances.png)
